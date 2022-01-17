@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+	<center>
+	<head>
+		<title> Mini Photomath </title>
+	</head>
+
+	
+	<body>
+		<h1 class="text-center"> Mini Photomath </h1>
+		<p> Upload an image of equation in a format that can be read by <a href="https://docs.opencv.org/3.4/d4/da8/group__imgcodecs.html#ga288b8b3da0892bd651fce07b3bbd3a56">cv2.imread()</a> function .</p>
+		<p> When the file is chosen click on Predict and Evaluate to get predicted equation from your picture and its evaluation.</p>
+
+		<form class="p-3 text-center" action='/', method="post" enctype="multipart/form-data">
+		<input class="form-control" type="file" name="imagefile">
+		<input class="btn btn-primary mt-3" type="submit" value="Predict and Evaluate">
+		</form>
+
+		{% if equation %}
+			<p class="text-center"> Equation: {{equation}}</p>
+		{% endif %}
+	</body>
+	</center>
+
+</html>
