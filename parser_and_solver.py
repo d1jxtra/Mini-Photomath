@@ -1,6 +1,7 @@
+#priorities are used for parsing, + and - have smaller priorities than * and /
 priorities={"+":(1,2), "-":(1,2), "*":(3,4), "/":(3,4)}
 
-#Tokeni
+#Tokens
 Int="Integer"
 Op="Operator"
 EOF="EOF"
@@ -11,6 +12,8 @@ functions={"+": lambda x,y: x+y, "-": lambda x,y: x-y,
 
 
 def tokenize(text: str):
+    """Making list of tokens from string"""
+    
     i=0
     result=[]
     while i<len(text):
@@ -32,6 +35,7 @@ def tokenize(text: str):
     return result
 
 
+#class used for iterating through list of tokens
 class Iterator:
     def __init__(self,value:list)->None:
         self.value=value
@@ -50,6 +54,8 @@ class Iterator:
 
 
 def parse(tokens: Iterator, priority: int):
+    """Recursive parser. It recurively picks left and right expressions of operators based on priority"""
+    
     left_type, left = tokens.next()
     if left_type==Par and left=="(":
         left=parse(tokens,0)
@@ -80,7 +86,15 @@ def parse(tokens: Iterator, priority: int):
 
 
 def calculate(expression):
+    """Calculating parsed equation"""
+    
     if type(expression)==int:
         return expression
     else:
         return expression[0](calculate(expression[1]),calculate(expression[2]))
+    
+    
+def parse_and_solve(equation):
+    """Function that combines previous functions"""
+    
+    return calculate(parse(Iterator(tokenize(equation)),0))

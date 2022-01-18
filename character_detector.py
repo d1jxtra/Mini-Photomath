@@ -2,26 +2,54 @@ import cv2
 import numpy as np
 
 
-def character_detector(img):
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    ret, thresh1 = cv2.threshold(gray,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+def character_detector(image):
+    """returns list of characters detected from image of equation in np.array form"""
     
-    kernel = np.ones((3, 3), np.uint8)
-    img_eroded = cv2.erode(thresh1, kernel, iterations = 1)
-    
-    contours, hierarchy = cv2.findContours(img_eroded, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    height, width = gray.shape
+    area = height*width
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+
+    thresh_size = int(height/6)
+    thresh_size = thresh_size if thresh_size%2 else thresh_size+1
+    thresh = cv2.adaptiveThreshold(blurred,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,thresh_size,5)
+    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
+
+
+    #Taking boundaries of contours that are big enough
     boundaries=[]
     for cnt in contours:
         x,y,w,h = cv2.boundingRect(cnt)
-        boundaries.append((x,y,w,h))
-    boundaries_array=np.asarray(boundaries)
-    bs=boundaries_array[boundaries_array[:,0].argsort()]  #boundaries_array sortirana po x-evima
-    characters=[thresh1[bs[i,1]:bs[i,1]+bs[i,3],bs[i,0]:bs[i,0]+bs[i,2]] for i in range(bs.shape[0])]
+        if w>0.07*height or h>0.1*height:
+            boundaries.append((x,y,w,h))
+
+    boundaries = sorted(boundaries)
+
+    #We remove contour of picture edge if it exists
+    if boundaries[0][0]==0 and boundaries[0][1]==0:
+        del(boundaries[0])
+
+    #Some contours can be part of already existing contours. For example 2 circles in number 8. We remove those.
+    indices=[]
+    for i in range(len(boundaries)):
+        for j in range(i):
+            if j in indices:
+                continue
+            x_in = (boundaries[i][0]>boundaries[j][0]) and (boundaries[i][0]+boundaries[i][2]<boundaries[j][0]+boundaries[j][2])
+            y_in = (boundaries[i][1]>boundaries[j][1]) and (boundaries[i][1]+boundaries[i][3]<boundaries[j][1]+boundaries[j][3])
+            if x_in and y_in:
+                indices.append(i)
+
+    ba = np.asarray(boundaries)
+    ba = np.delete(ba,indices,0)
+    characters=[thresh[ba[i,1]:ba[i,1]+ba[i,3],ba[i,0]:ba[i,0]+ba[i,2]] for i in range(ba.shape[0])]
     
     return characters
 
 
 def ImageToSquare(image: np.ndarray):
+    """Adding padding to an image to make it square"""
+    
     height = image.shape[0]
     width = image.shape[1]
     if height==width:
@@ -31,29 +59,31 @@ def ImageToSquare(image: np.ndarray):
     size = int(diff/2)
     
     if height>width:
-        padding = np.full((height, size),255)
+        padding = np.zeros((height, size))
         square=np.hstack((padding, image, padding))
     else:
-        padding = np.full((size, width),255)
+        padding = np.zeros((size, width))
         square = np.vstack((padding, image, padding))
     
     return square
 
-
 def ImageResizer(image: np.ndarray, dimensions: (int,int)):
-    temp = cv2.resize(image.astype('uint8'), (28,28), interpolation = cv2.INTER_AREA) 
-    # s obzirom da slike za treniranje imaju samo dvije vrste piksela tako transformiramo i danu sliku
-    _,binary=cv2.threshold(temp,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    return binary
-
+    """Resizing image to given dimensions"""
+    resized = cv2.resize(image.astype('uint8'), (28,28), interpolation = cv2.INTER_AREA) 
+    return resized
 
 def ImageToBinary(image: np.ndarray):
-    image = cv2.bitwise_not(image.astype('uint8'))
-    image = image/255.0
+    """Converting image to look as an image from training set"""
+    
+    # because training set contains two types of value we transform resized picture in that way
+    _,binary=cv2.threshold(image,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    # scaling to 0,1
+    image= binary/255.0
+    
     return image
 
 
-
+# class for transforming image to list of characters
 class CharacterTransformer:
     def __init__(self, dim: int):
         self.dim = dim
