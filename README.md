@@ -39,7 +39,7 @@ Run jupyter notebook `Mali Photomath.ipynb`. You can upload your own image path 
 `character_detector.py` - detecting characters from image of math expression\
 `parser_and_solver.py` - parsing string of math expression and solving it\
 `character classifier.ipynb` - jupyter notebook where CNN model for character recognision is built and trained\
-`character classifier2.ipynb` - same model as in previous file but trained on bigger dataset\ 
+`character classifier2.ipynb` - same model as in previous file but trained on bigger dataset\
 `models/` - folder containing saved models for character classification\
 `app.py` - flask app that lets you upload image of expression and returns its result\
 `templates/` - HTML file needed for `app.py`\
