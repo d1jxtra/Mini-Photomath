@@ -4,7 +4,7 @@ from character_detector import character_detector, CharacterTransformer
 from flask import Flask, render_template, request
 from tensorflow.keras.models import load_model
 import pickle
-from parser_and_solver import tokenize, Iterator, parse, calculate
+from parser_and_solver import parse_and_solve
 
 app = Flask(__name__)
 
@@ -29,13 +29,13 @@ def predict():
     chars=transformer.transform(characters)
     
     equation=""
-    for i in range(1,len(chars)):
+    for i in range(len(chars)):
         prediction = model.predict(chars[i].reshape((dim,dim,1))[np.newaxis])
         label=codes[np.argmax(prediction)]
         equation+=label
     
     equation = equation.replace('[','(').replace(']',')')
-    evaluation = calculate(parse(Iterator(tokenize(equation)),0))
+    evaluation = parse_and_solve(equation)
     equation = equation + ' = ' + str(evaluation)
     
     return render_template('index.html', equation = equation)
